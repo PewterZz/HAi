@@ -1,3 +1,8 @@
+-numpy
+-scipy
+-opencv-python
+-matplotlib
 -torch
 -torchvision
 -torchaudio
+-pycocotools
