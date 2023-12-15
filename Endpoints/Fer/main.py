@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 import io
 
-model = load_model('./models/fer_emotion.h5')
+model = load_model('../../models/fer_emotion.h5')
 
 app = FastAPI()
 
@@ -26,3 +26,6 @@ async def predict(file: UploadFile = File(...)):
 
     return {"prediction": prediction.tolist()}
 
+@app.get("/test")
+async def test():
+    return { "msg": "Hello Peter" }
