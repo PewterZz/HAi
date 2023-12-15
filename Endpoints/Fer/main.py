@@ -26,3 +26,6 @@ async def predict(file: UploadFile = File(...)):
 
     return {"prediction": prediction.tolist()}
 
+@app.get("/test")
+async def test():
+    return { "msg": "Hello Peter" }
