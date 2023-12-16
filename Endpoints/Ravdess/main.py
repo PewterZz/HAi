@@ -12,11 +12,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=['*']
 )
-model = pickle.load(open('model.pkl', 'rb'))
+model = pickle.load(open('../../models/ravdess/model.pkl', 'rb'))
 
-scaler = pickle.load(open('scaler.pkl', 'rb'))
+scaler = pickle.load(open('../../models/ravdess/scaler.pkl', 'rb'))
 
-encoder = pickle.load(open('encoder.pkl', 'rb'))
+encoder = pickle.load(open('../../models/ravdess/encoder.pkl', 'rb'))
 
 def noise(data):
     noise_amp = 0.035 * np.random.uniform() * np.amax(data)
@@ -56,7 +56,7 @@ def get_features(path):
   
     return result
 
-@app.post("/uploadfile/")
+@app.post("/predict/")
 async def create_upload_file(file: UploadFile = File(...)):
     # Save the uploaded audio file
     with open(file.filename, "wb") as audio_file:
