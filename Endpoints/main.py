@@ -1,22 +1,27 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from keras.models import load_model
 import librosa
 import numpy as np
 import pickle
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-
-from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image
+import io
 
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*']
 )
-model = pickle.load(open('../../models/ravdess/model.pkl', 'rb'))
 
+# Load the emotion recognition model and related resources
+emotion_model = pickle.load(open('../../models/ravdess/model.pkl', 'rb'))
 scaler = pickle.load(open('../../models/ravdess/scaler.pkl', 'rb'))
-
 encoder = pickle.load(open('../../models/ravdess/encoder.pkl', 'rb'))
+
+# Load the image-based emotion recognition model
+image_model = load_model('../../models/fer_emotion.h5')
 
 def noise(data):
     noise_amp = 0.035 * np.random.uniform() * np.amax(data)
@@ -56,8 +61,8 @@ def get_features(path):
   
     return result
 
-@app.post("/predict/")
-async def create_upload_file(file: UploadFile = File(...)):
+@app.post("/audio/predict/")
+async def predict_audio(file: UploadFile = File(...)):
     # Save the uploaded audio file
     with open(file.filename, "wb") as audio_file:
         audio_file.write(file.file.read())
@@ -71,8 +76,30 @@ async def create_upload_file(file: UploadFile = File(...)):
     features = np.expand_dims(features, axis=2)
 
     # Make predictions using the machine learning model
-    prediction = model.predict(features)
+    prediction = emotion_model.predict(features)
     new_emotion = encoder.inverse_transform(prediction)[0][0]
     
     # Return the prediction as a JSON response
     return JSONResponse(content={"prediction": new_emotion})
+
+def preprocess_image(image: Image.Image):
+    image = image.resize((224, 224))  
+    image = np.array(image)
+    image = image / 255.0  
+    image = np.expand_dims(image, axis=0)  
+    return image
+
+@app.post("/image/predict/")
+async def predict_image(file: UploadFile = File(...)):
+    image_bytes = await file.read()
+    image = Image.open(io.BytesIO(image_bytes))
+
+    processed_image = preprocess_image(image)
+
+    prediction = image_model.predict(processed_image)
+
+    return {"prediction": prediction.tolist()}
+
+@app.get("/test")
+async def test():
+    return { "msg": "Hello Peter" }
